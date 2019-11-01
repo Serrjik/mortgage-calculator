@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Cal Ipo</title>
+    <title>Калькулятор ипотеки</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <style>
         .my-container {
@@ -27,7 +27,7 @@
         <div class="card">
             <div class="card-header my-card-header">
                 <h5 class="card-title">Калькулятор ипотечного кредитования</h5>
-                <h6 class="card-subtitle mb-2 text-muted">Проект подготовлен в рамках интенсива <a href="https://vk.com/webcademy" target="_blank">WebCademy</a></h6>
+                <h6 class="card-subtitle mb-2 text-muted">Проект подготовлен Сергеем Григоровичем в рамках интенсива <a href="https://vk.com/webcademy" target="_blank">WebCademy</a></h6>
             </div>
 
             <!-- Стоимость недвижимости -->
@@ -43,7 +43,7 @@
             <div class="card-body">
                 <label for="firstContributionText">Первоначальный взнос:</label>
                 <input type="text" id="firstContributionText" class="form-control" aria-describedby="firstContributionNumberHolder" value="2 500 000 ₽">
-                <input type="range" class="form-control-range" id="firstContributionRange" min="0" max="15000000">
+                <input type="range" class="form-control-range" id="firstContributionRange" min="0" max="10000000">
                 <small id="firstContributionNumberHolder" class="form-text text-muted">Ваш первичный взнос в качестве погашения кредита (обычно сразу после сделки)</small>
             </div>
             <!-- / Первоначальный взнос -->
@@ -52,7 +52,7 @@
             <div class="card-body">
                 <label for="returnPeriodText">Срок кредита:</label>
                 <input type="text" id="returnPeriodText" class="form-control" aria-describedby="returnPeriodNumberHolder" value="10 лет">
-                <input type="range" class="form-control-range" id="returnPeriodRange" min="10" max="40">
+                <input type="range" class="form-control-range" id="returnPeriodRange" min="1" max="40">
                 <small id="returnPeriodNumberHolder" class="form-text text-muted">Как долго в годах планируете возвращать долг.</small>
             </div>
             <!-- / Срок кредита -->
@@ -67,9 +67,9 @@
 
             <hr>
             <div class="card-footer">
-                <p class="my-result"><strong>Итого:</strong> <span id="payment">34 000</span> рублей в месяц</p>
-                <small class="form-text text-muted">Общая выплата: <span id="common">5 000 000</span> рублей.</small>
-                <small class="form-text text-muted">Переплата: <span id="common">3 230 000</span> рублей.</small>
+                <p class="my-result"><strong>Итого:</strong> <span id="payment">34 000 ₽</span> в месяц</p>
+                <small class="form-text text-muted">Общая выплата: <span id="common">5 000 000 ₽</span></small>
+                <small class="form-text text-muted">Переплата: <span id="subpayment">3 230 000 ₽</span></small>
             </div>
         </div>
     </div>
