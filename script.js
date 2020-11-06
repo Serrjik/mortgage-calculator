@@ -7,6 +7,12 @@ const CONTRIBUTION_MAX = 10000000 // максимально возможный �
 const RETURN_PERIOD_MIN = 1 // минимально возможный срок кредита
 const RETURN_PERIOD_MAX = 40 // максимально возможный срок кредита
 
+
+// Минимально возможная процентная ставка.
+const PERCENT_NUMBER_MIN = 1
+// Максимально возможная процентная ставка.
+const PERCENT_NUMBER_MAX = 30
+
 // Стоимость недвижимости
 const creditText = document.querySelector('#creditText')
 const creditRange = document.querySelector('#creditRange')
@@ -16,6 +22,10 @@ const firstContributionRange = document.querySelector('#firstContributionRange')
 // Срок кредита
 const returnPeriodText = document.querySelector('#returnPeriodText')
 const returnPeriodRange = document.querySelector('#returnPeriodRange')
+returnPeriodRange.setAttribute('max', RETURN_PERIOD_MAX)
+// Процентная ставка.
+const percentNumber = document.querySelector('#percentNumber')
+const percentNumberRange = document.querySelector('#percentNumberText')
 
 // Форматтер числа - Встроенный объект Intl с параметрами форматирования данных.
 const formatterNumber = new Intl.NumberFormat('ru')
@@ -24,7 +34,8 @@ const formatterNumber = new Intl.NumberFormat('ru')
 const formatterCurrency = new Intl.NumberFormat('ru', {
 	style: 'currency',
 	currency: 'RUB',
-	minimumFractionDigits: 0 // максимальное количество знаков после запятой
+	// максимальное количество знаков после запятой
+	minimumFractionDigits: 0
 })
 
 // Форматтер даты.
@@ -50,13 +61,23 @@ const formatterDate = {
 	}
 }
 
+// Форматтер процентов.
+const formatterPercent = {
+	format (percent) {
+		percent = parseInt(percent)
+
+		return `${percent} %`
+	}
+}
+
 /*
 	Порядок событий:
 	focus -> keydown -> keypress -> input -> keyup
 */
 // Событие "input" возникает при смене значения в поле <input>.
 
-setDoubleDependencies( // для инпута Стоимость недвижимости
+// для инпута "Стоимость недвижимости"
+setDoubleDependencies(
 	creditText,
 	creditRange,
 	formatterNumber,
@@ -65,7 +86,8 @@ setDoubleDependencies( // для инпута Стоимость недвижи�
 	CREDIT_MAX
 )
 
-setDoubleDependencies( // для инпута Первоначальный взнос
+// для инпута "Первоначальный взнос"
+setDoubleDependencies(
 	firstContributionText,
 	firstContributionRange,
 	formatterNumber,
@@ -74,7 +96,8 @@ setDoubleDependencies( // для инпута Первоначальный вз�
 	CONTRIBUTION_MAX
 )
 
-setDoubleDependencies( // для инпута Срок кредита
+// для инпута "Срок кредита"
+setDoubleDependencies(
 	returnPeriodText,
 	returnPeriodRange,
 	formatterNumber,
@@ -83,6 +106,15 @@ setDoubleDependencies( // для инпута Срок кредита
 	RETURN_PERIOD_MAX
 )
 
+// для инпута "Процентная ставка"
+setDoubleDependencies(
+	percentNumber,
+	percentNumberText,
+	formatterNumber,
+	formatterPercent,
+	PERCENT_NUMBER_MIN,
+	PERCENT_NUMBER_MAX
+)
 setReaction(
 	creditText,
 	creditRange,
@@ -90,9 +122,11 @@ setReaction(
 	firstContributionRange,
 	returnPeriodText,
 	returnPeriodRange,
-/*	function (event, elements) {
-		console.log(elements)
-	}*/
+	percentNumber,
+	percentNumberText,
+	// function (event, elements) {
+	// 	console.log(elements)
+	// }
 	mainProcess
 )
 
@@ -105,7 +139,14 @@ mainProcess()
 	Целевой форматтер,
 	минимальное и максимальное значения инпута)
 */
-function setDoubleDependencies (textElement, rangeElement, formatterNumber, formatterGoal, min, max) {
+function setDoubleDependencies (
+	textElement,
+	rangeElement,
+	formatterNumber,
+	formatterGoal,
+	min,
+	max
+) {
 	// Среднее арифметическое min и max значений input'ов.
 	const middle = (min + max) / 2
 
@@ -117,7 +158,7 @@ function setDoubleDependencies (textElement, rangeElement, formatterNumber, form
 	// Установить значение input'а по умолчанию:
 	textElement.value = formatterGoal.format(middle)
 
-	// Добавить обработчик события "focus" инпуту Стоимость недвижимости.
+	// Добавить обработчик события "focus" инпуту "Стоимость недвижимости".
 	textElement.addEventListener('focus', function (event) {
 		/*
 			this - контекст. Ссылается на тот самый элемент,
@@ -229,12 +270,13 @@ function mainProcess () {
 	const credit = parseInt(creditRange.value)
 	const firstContribution = parseInt(firstContributionRange.value)
 	const returnPeriod = parseInt(returnPeriodRange.value)
+	const percent = parseInt(percentNumberRange.value)
 
 	// Рассчитать и присвоить значение элементу "Процентная ставка".
-	let percent = 10 + Math.log(returnPeriod) / Math.log(0.5)
+	// let percent = 10 + Math.log(returnPeriod) / Math.log(0.5)
 	// Взять только 3 первых цифры:
-	percent = parseInt(percent * 100 + 1) / 100
-	document.querySelector('#percentNumber').value = percent + ' %'
+	// percent = parseInt(percent * 100 + 1) / 100
+	// document.querySelector('#percentNumber').value = percent + ' %'
 
 	// Рассчитать и присвоить значение элементу "Общая выплата".
 	let commonDebit = (credit - firstContribution) * (1 + percent) ^ returnPeriod
