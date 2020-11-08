@@ -115,6 +115,7 @@ setDoubleDependencies(
 	PERCENT_NUMBER_MIN,
 	PERCENT_NUMBER_MAX
 )
+
 setReaction(
 	creditText,
 	creditRange,
@@ -250,13 +251,15 @@ function setDoubleDependencies (
 	})
 }
 
-// Функция присвоит обработчик события нескольким элементам сразу.
+/*
+	Функция присвоит обработчик события нескольким элементам сразу.
+	Обработчик события передаётся последним аргументом.
+*/
 function setReaction (...args) {
 	const handler = args.splice(-1)[0]
-
 	/*
 		Пройти по всем элементам массива args
-		и на событие 'input' повесить обработчик handler.
+		и повесить им на событие 'input' обработчик handler.
 	*/
 	for (const element of args) {
 		element.addEventListener('input', function (event) {
@@ -269,195 +272,105 @@ function setReaction (...args) {
 function mainProcess () {
 	const credit = parseInt(creditRange.value)
 	const firstContribution = parseInt(firstContributionRange.value)
-	const returnPeriod = parseInt(returnPeriodRange.value)
-	const percent = parseInt(percentNumberRange.value)
-
-	// Рассчитать и присвоить значение элементу "Процентная ставка".
-	// let percent = 10 + Math.log(returnPeriod) / Math.log(0.5)
-	// Взять только 3 первых цифры:
-	// percent = parseInt(percent * 100 + 1) / 100
-	// document.querySelector('#percentNumber').value = percent + ' %'
-
-	// Рассчитать и присвоить значение элементу "Общая выплата".
-	let commonDebit = (credit - firstContribution) * (1 + percent) ^ returnPeriod
-	document.querySelector('#common').textContent = formatterCurrency.format(commonDebit)
+	const returnPeriod = parseInt(returnPeriodRange.value) * 12
+	const percent = parseInt(percentNumberRange.value) / 100
 
 	// Рассчитать и присвоить значение элементу "Переплата".
-	const subpayment = commonDebit - (credit - firstContribution)
-	document.querySelector('#subpayment').textContent = formatterCurrency.format(subpayment)
+	// const subpayment = commonDebit - (credit - firstContribution)
+	// document.querySelector('#subpayment').textContent = formatterCurrency.format(subpayment)
 
 	// Рассчитать и присвоить значение элементу "Итого: в месяц".
-	const payment = subpayment / (returnPeriod * 12)
+	const x = Math.pow(1 + percent, returnPeriod)
+	const payment = ((credit - firstContribution) * x * percent) / (x - 1)
 	document.querySelector('#payment').textContent = formatterCurrency.format(payment)
+
+	// Рассчитать и присвоить значение элементу "Общая выплата".
+	document.querySelector('#common').textContent = formatterCurrency
+		.format((payment * returnPeriod).toFixed(2))
+
+	// Finally, chart loan balance, and interest and equity payments
+	chart(credit - firstContribution, percent, payment, returnPeriod);
 }
 
-// // Добавить обработчик события "focus" инпуту Первоначальный взнос.
-// firstContributionText.addEventListener('focus', function (event) {
-// 	// Достать из строки только числа:
-// 	let number = ''
+// Chart monthly loan balance, interest and equity in an HTML <canvas> element.
+// If called with no arguments then just erase any previously drawn chart.
+function chart(principal, interest, monthly, payments) {
+    var graph = document.getElementById("graph"); // Get the <canvas> tag
+    graph.width = graph.width;  // Magic to clear and reset the canvas element
 
-// 	for (const letter of this.value) {
-// 		if ('0123456789'.includes(letter)) {
-// 			number += letter
-// 		}
-// 	}
+    // If we're called with no arguments, or if this browser does not support
+    // graphics in a <canvas> element, then just return now.
+    if (arguments.length == 0 || !graph.getContext) return;
 
-// 	// Превратить строку number в число.
-// 	number = parseInt(number)
+    // Get the "context" object for the <canvas> that defines the drawing API
+    var g = graph.getContext("2d"); // All drawing is done with this object
+    var width = graph.width, height = graph.height; // Get canvas size
 
-// 	// value хранит в себе значение input'а.
-// 	// Установить значением текущего элемента только число (без знака валюты).
-// 	this.value = formatterNumber.format(number)
-// })
+    // These functions convert payment numbers and dollar amounts to pixels
+    function paymentToX(n) { return n * width/payments; }
+    function amountToY(a) { return height-(a * height/(monthly*payments*1.05));}
 
-// // Добавить обработчик события "input" инпуту Первоначальный взнос.
-// firstContributionText.addEventListener('input', function inputHandler (event) {
-// 	// Достать из строки только числа:
-// 	let number = ''
+    // Payments are a straight line from (0,0) to (payments, monthly*payments)
+    g.moveTo(paymentToX(0), amountToY(0));         // Start at lower left
+    g.lineTo(paymentToX(payments),                 // Draw to upper right
+             amountToY(monthly*payments));
+    g.lineTo(paymentToX(payments), amountToY(0));  // Down to lower right
+    g.closePath();                                 // And back to start
+    g.fillStyle = "#f88";                          // Light red
+    g.fill();                                      // Fill the triangle
+    g.font = "bold 12px sans-serif";               // Define a font
+    g.fillText("Total Interest Payments", 20,20);  // Draw text in legend
 
-// 	for (const letter of this.value) {
-// 		if ('0123456789'.includes(letter)) {
-// 			number += letter
-// 		}
-// 	}
+    // Cumulative equity is non-linear and trickier to chart
+    var equity = 0;
+    g.beginPath();                                 // Begin a new shape
+    g.moveTo(paymentToX(0), amountToY(0));         // starting at lower-left
+    for(var p = 1; p <= payments; p++) {
+        // For each payment, figure out how much is interest
+        var thisMonthsInterest = (principal-equity)*interest;
+        equity += (monthly - thisMonthsInterest);  // The rest goes to equity
+        g.lineTo(paymentToX(p),amountToY(equity)); // Line to this point
+    }
+    g.lineTo(paymentToX(payments), amountToY(0));  // Line back to X axis
+    g.closePath();                                 // And back to start point
+    g.fillStyle = "green";                         // Now use green paint
+    g.fill();                                      // And fill area under curve
+    g.fillText("Total Equity", 20,35);             // Label it in green
 
-// 	// Превратить строку number в число.
-// 	number = parseInt(number)
+    // Loop again, as above, but chart loan balance as a thick black line
+    var bal = principal;
+    g.beginPath();
+    g.moveTo(paymentToX(0),amountToY(bal));
+    for(var p = 1; p <= payments; p++) {
+        var thisMonthsInterest = bal*interest;
+        bal -= (monthly - thisMonthsInterest);     // The rest goes to equity
+        g.lineTo(paymentToX(p),amountToY(bal));    // Draw line to this point
+    }
+    g.lineWidth = 3;                               // Use a thick line
+    g.stroke();                                    // Draw the balance curve
+    g.fillStyle = "black";                         // Switch to black text
+    g.fillText("Loan Balance", 20,50);             // Legend entry
 
-// 	// Кредит должен быть не менее минимального и не более максимально возможного.
-// 	if (number < CONTRIBUTION_MIN) {
-// 		number = CONTRIBUTION_MIN
-// 	}
+    // Now make yearly tick marks and year numbers on X axis
+    g.textAlign="center";                          // Center text over ticks
+    var y = amountToY(0);                          // Y coordinate of X axis
+    for(var year=1; year*12 <= payments; year++) { // For each year
+        var x = paymentToX(year*12);               // Compute tick position
+        g.fillRect(x-0.5,y-3,1,3);                 // Draw the tick
+        if (year == 1) g.fillText("Year", x, y-5); // Label the axis
+        if (year % 5 == 0 && year*12 !== payments) // Number every 5 years
+            g.fillText(String(year), x, y-5);
+    }
 
-// 	if (number > CONTRIBUTION_MAX) {
-// 		number = CONTRIBUTION_MAX
-// 	}
-
-// 	/*
-// 		Добавить изменение значения ползунка Первоначальный взнос
-// 		при изменении значения выбранного элемента.
-// 	*/
-// 	firstContributionRange.value = number
-
-// 	number = formatterNumber.format(number)
-// 	// Записать в input отформатированное число.
-// 	this.value = number
-// })
-
-// // Добавить обработчик события "blur" инпуту Первоначальный взнос.
-// firstContributionText.addEventListener('blur', function (event) {
-// 	// Достать из строки только числа:
-// 	let number = ''
-
-// 	for (const letter of this.value) {
-// 		if ('0123456789'.includes(letter)) {
-// 			number += letter
-// 		}
-// 	}
-
-// 	// Превратить строку number в число.
-// 	number = parseInt(number)
-
-// 	// value хранит в себе значение input'а.
-// 	this.value = formatterCurrency.format(number)
-// })
-
-// // Добавить обработчик события "input" инпуту-ползунку Первоначальный взнос.
-// firstContributionRange.addEventListener('input', function (event) {
-// 	// Присвоим значение ползунка инпуту Первоначальный взнос.
-// 	firstContributionText.value = formatterCurrency.format(parseInt(this.value))
-// })
-
-// // Добавить обработчик события "focus" инпуту Срок кредита.
-// returnPeriodText.addEventListener('focus', function (event) {
-// 	// Достать из строки только числа:
-// 	let number = ''
-
-// 	for (const letter of this.value) {
-// 		if ('0123456789'.includes(letter)) {
-// 			number += letter
-// 		}
-// 	}
-
-// 	// Превратить строку number в число.
-// 	number = parseInt(number)
-
-// 	// value хранит в себе значение input'а.
-// 	// Установить значением текущего элемента только число (без знака валюты).
-// 	this.value = formatterNumber.format(number)
-// })
-
-// // Добавить обработчик события "input" инпуту Срок кредита.
-// returnPeriodText.addEventListener('input', function inputHandler (event) {
-// 	// Достать из строки только числа:
-// 	let number = ''
-
-// 	for (const letter of this.value) {
-// 		if ('0123456789'.includes(letter)) {
-// 			number += letter
-// 		}
-// 	}
-
-// 	// Превратить строку number в число.
-// 	number = parseInt(number)
-
-// 	/*
-// 		Добавить изменение значения ползунка Срок кредита
-// 		при изменении значения выбранного элемента.
-// 	*/
-// 	returnPeriodRange.value = number
-
-// 	number = formatterNumber.format(number)
-// 	// Записать в input отформатированное число.
-// 	this.value = number
-// })
-
-// // Добавить обработчик события "blur" инпуту Срок кредита.
-// returnPeriodText.addEventListener('blur', function (event) {
-// 	// Достать из строки только числа:
-// 	let number = ''
-
-// 	for (const letter of this.value) {
-// 		if ('0123456789'.includes(letter)) {
-// 			number += letter
-// 		}
-// 	}
-
-// 	// Превратить строку number в число.
-// 	number = parseInt(number)
-
-// 	// Срок кредита должен быть не менее минимального и не более максимально возможного.
-// 	if (number < RETURN_PERIOD_MIN) {
-// 		number = RETURN_PERIOD_MIN
-// 	}
-
-// 	if (number > RETURN_PERIOD_MAX) {
-// 		number = RETURN_PERIOD_MAX
-// 	}
-
-// 	// Дописать после количества лет слово "лет" или "год"
-// 	this.value = yearToString(number)
-// })
-
-// // Добавить обработчик события "input" инпуту-ползунку Срок кредита.
-// returnPeriodRange.addEventListener('input', function (event) {
-// 	// Присвоим значение ползунка инпуту Срок кредита.
-// 	returnPeriodText.value = yearToString(parseInt(this.value))
-// })
-
-// // Функция дописывает к числу лет слово "год" или "года" или "лет".
-// function yearToString (number) {
-// 	if (number === 21 || number === 31) {
-// 		number.toString()
-// 		number += ' год'
-// 	} else if ( (number >= 22 && number <= 24) ||
-// 				(number >= 32 && number <= 34) ) {
-// 		number.toString()
-// 		number += ' года'
-// 	} else {
-// 		number.toString()
-// 		number += ' лет'
-// 	}
-
-// 	return number
-// }
+    // Mark payment amounts along the right edge
+    g.textAlign = "right";                         // Right-justify text
+    g.textBaseline = "middle";                     // Center it vertically
+    var ticks = [monthly*payments, principal];     // The two points we'll mark
+    var rightEdge = paymentToX(payments);          // X coordinate of Y axis
+    for(var i = 0; i < ticks.length; i++) {        // For each of the 2 points
+        var y = amountToY(ticks[i]);               // Compute Y position of tick
+        g.fillRect(rightEdge-3, y-0.5, 3,1);       // Draw the tick mark
+        g.fillText(String(ticks[i].toFixed(0)),    // And label it.
+                   rightEdge-5, y);
+    }
+}
