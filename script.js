@@ -48,7 +48,7 @@ const formatterDate = {
 		if (years >= 5 && years <= 20) {
 			txt = 'лет'
 		} else {
-			if (count == 1) {
+			if (count === 1) {
 				txt = 'год'
 			} else {
 				if (count >= 2 && count <= 4) {
@@ -125,9 +125,6 @@ setReaction(
 	returnPeriodRange,
 	percentNumber,
 	percentNumberText,
-	// function (event, elements) {
-	// 	console.log(elements)
-	// }
 	mainProcess
 )
 
@@ -273,11 +270,7 @@ function mainProcess () {
 	const credit = parseInt(creditRange.value)
 	const firstContribution = parseInt(firstContributionRange.value)
 	const returnPeriod = parseInt(returnPeriodRange.value) * 12
-	const percent = parseInt(percentNumberRange.value) / 100
-
-	// Рассчитать и присвоить значение элементу "Переплата".
-	// const subpayment = commonDebit - (credit - firstContribution)
-	// document.querySelector('#subpayment').textContent = formatterCurrency.format(subpayment)
+	const percent = parseInt(percentNumberRange.value) / 100 / 12
 
 	// Рассчитать и присвоить значение элементу "Итого: в месяц".
 	const x = Math.pow(1 + percent, returnPeriod)
@@ -285,8 +278,13 @@ function mainProcess () {
 	document.querySelector('#payment').textContent = formatterCurrency.format(payment)
 
 	// Рассчитать и присвоить значение элементу "Общая выплата".
+	const common = (payment * returnPeriod).toFixed(2)
 	document.querySelector('#common').textContent = formatterCurrency
-		.format((payment * returnPeriod).toFixed(2))
+		.format(common)
+
+	// Рассчитать и присвоить значение элементу "Переплата".
+	const subpayment = common - (credit - firstContribution)
+	document.querySelector('#subpayment').textContent = formatterCurrency.format(subpayment)
 
 	// Finally, chart loan balance, and interest and equity payments
 	chart(credit - firstContribution, percent, payment, returnPeriod);
@@ -295,16 +293,16 @@ function mainProcess () {
 // Chart monthly loan balance, interest and equity in an HTML <canvas> element.
 // If called with no arguments then just erase any previously drawn chart.
 function chart(principal, interest, monthly, payments) {
-    var graph = document.getElementById("graph"); // Get the <canvas> tag
+    const graph = document.getElementById("graph"); // Get the <canvas> tag
     graph.width = graph.width;  // Magic to clear and reset the canvas element
 
     // If we're called with no arguments, or if this browser does not support
     // graphics in a <canvas> element, then just return now.
-    if (arguments.length == 0 || !graph.getContext) return;
+    if (arguments.length === 0 || !graph.getContext) return;
 
     // Get the "context" object for the <canvas> that defines the drawing API
-    var g = graph.getContext("2d"); // All drawing is done with this object
-    var width = graph.width, height = graph.height; // Get canvas size
+    const g = graph.getContext("2d"); // All drawing is done with this object
+    const width = graph.width, height = graph.height; // Get canvas size
 
     // These functions convert payment numbers and dollar amounts to pixels
     function paymentToX(n) { return n * width/payments; }
@@ -322,12 +320,12 @@ function chart(principal, interest, monthly, payments) {
     g.fillText("Total Interest Payments", 20,20);  // Draw text in legend
 
     // Cumulative equity is non-linear and trickier to chart
-    var equity = 0;
+    let equity = 0;
     g.beginPath();                                 // Begin a new shape
     g.moveTo(paymentToX(0), amountToY(0));         // starting at lower-left
-    for(var p = 1; p <= payments; p++) {
+    for(let p = 1; p <= payments; p++) {
         // For each payment, figure out how much is interest
-        var thisMonthsInterest = (principal-equity)*interest;
+        const thisMonthsInterest = (principal-equity)*interest;
         equity += (monthly - thisMonthsInterest);  // The rest goes to equity
         g.lineTo(paymentToX(p),amountToY(equity)); // Line to this point
     }
@@ -338,11 +336,11 @@ function chart(principal, interest, monthly, payments) {
     g.fillText("Total Equity", 20,35);             // Label it in green
 
     // Loop again, as above, but chart loan balance as a thick black line
-    var bal = principal;
+    let bal = principal;
     g.beginPath();
     g.moveTo(paymentToX(0),amountToY(bal));
-    for(var p = 1; p <= payments; p++) {
-        var thisMonthsInterest = bal*interest;
+    for(let p = 1; p <= payments; p++) {
+        const thisMonthsInterest = bal*interest;
         bal -= (monthly - thisMonthsInterest);     // The rest goes to equity
         g.lineTo(paymentToX(p),amountToY(bal));    // Draw line to this point
     }
@@ -353,22 +351,22 @@ function chart(principal, interest, monthly, payments) {
 
     // Now make yearly tick marks and year numbers on X axis
     g.textAlign="center";                          // Center text over ticks
-    var y = amountToY(0);                          // Y coordinate of X axis
-    for(var year=1; year*12 <= payments; year++) { // For each year
-        var x = paymentToX(year*12);               // Compute tick position
+    const y = amountToY(0);                          // Y coordinate of X axis
+    for(let year=1; year*12 <= payments; year++) { // For each year
+        const x = paymentToX(year*12);               // Compute tick position
         g.fillRect(x-0.5,y-3,1,3);                 // Draw the tick
-        if (year == 1) g.fillText("Year", x, y-5); // Label the axis
-        if (year % 5 == 0 && year*12 !== payments) // Number every 5 years
+        if (year === 1) g.fillText("Year", x, y-5); // Label the axis
+        if (year % 5 === 0 && year*12 !== payments) // Number every 5 years
             g.fillText(String(year), x, y-5);
     }
 
     // Mark payment amounts along the right edge
     g.textAlign = "right";                         // Right-justify text
     g.textBaseline = "middle";                     // Center it vertically
-    var ticks = [monthly*payments, principal];     // The two points we'll mark
-    var rightEdge = paymentToX(payments);          // X coordinate of Y axis
-    for(var i = 0; i < ticks.length; i++) {        // For each of the 2 points
-        var y = amountToY(ticks[i]);               // Compute Y position of tick
+    const ticks = [monthly*payments, principal];     // The two points we'll mark
+    const rightEdge = paymentToX(payments);          // X coordinate of Y axis
+    for(let i = 0; i < ticks.length; i++) {        // For each of the 2 points
+        const y = amountToY(ticks[i]);               // Compute Y position of tick
         g.fillRect(rightEdge-3, y-0.5, 3,1);       // Draw the tick mark
         g.fillText(String(ticks[i].toFixed(0)),    // And label it.
                    rightEdge-5, y);
