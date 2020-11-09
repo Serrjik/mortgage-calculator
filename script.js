@@ -317,7 +317,7 @@ function chart(principal, interest, monthly, payments) {
     g.fillStyle = "#f88";                          // Light red
     g.fill();                                      // Fill the triangle
     g.font = "bold 12px sans-serif";               // Define a font
-    g.fillText("Total Interest Payments", 20,20);  // Draw text in legend
+    g.fillText("Общая выплата", 20,20);  // Draw text in legend
 
     // Cumulative equity is non-linear and trickier to chart
     let equity = 0;
@@ -333,7 +333,7 @@ function chart(principal, interest, monthly, payments) {
     g.closePath();                                 // And back to start point
     g.fillStyle = "green";                         // Now use green paint
     g.fill();                                      // And fill area under curve
-    g.fillText("Total Equity", 20,35);             // Label it in green
+    g.fillText("Сумма кредита", 20,35);             // Label it in green
 
     // Loop again, as above, but chart loan balance as a thick black line
     let bal = principal;
@@ -347,7 +347,7 @@ function chart(principal, interest, monthly, payments) {
     g.lineWidth = 3;                               // Use a thick line
     g.stroke();                                    // Draw the balance curve
     g.fillStyle = "black";                         // Switch to black text
-    g.fillText("Loan Balance", 20,50);             // Legend entry
+    g.fillText("Остаток кредита", 20,50);             // Legend entry
 
     // Now make yearly tick marks and year numbers on X axis
     g.textAlign="center";                          // Center text over ticks
